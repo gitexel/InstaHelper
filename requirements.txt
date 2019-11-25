@@ -1,2 +1,3 @@
 requests
 PyQt5
+instagram_private_api

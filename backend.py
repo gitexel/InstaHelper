@@ -4,25 +4,25 @@ from settings import APIBackendData, UserData
 import requests as req
 
 
-class BackendService(APIBackendData, UserData):
+class BackendService:
     def __init__(self):
-        super(APIBackendData, self).__init__()
-        super(UserData, self).__init__()
-        self.headers = {'Authorization': 'Token %s' % self.subscription_key}
+        self.user_data = UserData()
+        self.api_data = APIBackendData()
 
-    @property
+    def get_headers(self, refreshed_settings=False):
+        return {'Authorization': 'Token %s' % self.user_data.get_subscription_key(refresh_settings=refreshed_settings)}
+
     def subscription_status(self):
         """
 
         :return:
         {'valid': True, 'end_date': date}
         """
-        result: Response = req.get(url=self.API_URL + 'service/%s/status?format=json' % self.username,
-                                   headers=self.headers).json()
-
-        if result.status_code == 200:
-            return result
-        raise Exception("backend error")  # todo handel error
+        result: Response = req.get(url=self.api_data.api_url + 'service/%s/status' % self.user_data.username,
+                                   headers=self.get_headers(refreshed_settings=True)).json()
+        print(self.get_headers(refreshed_settings=True))
+        return result
+        # raise Exception("backend error")  # todo handel error
 
     #
     # def have_unfollow_task(self):

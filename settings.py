@@ -21,39 +21,65 @@ QCoreApplication.setApplicationVersion(APPLICATION_VERSION)
 # settings.sync()
 
 
-settings = QSettings('data/store.ini', QSettings.IniFormat)
-
 USER_DATA_DEFAULT = {'username': '', 'cookie': None, 'subscription_key': ''}
-BACKEND_DEFAULT_API_URL = 'https://api.instaschool.xyz/v1/'
+# BACKEND_DEFAULT_API_URL = 'https://api.instaschool.xyz/v1/'
+BACKEND_DEFAULT_API_URL = 'http://127.0.0.1:8000/v1/'
+
+settings = QSettings('data/store.ini', QSettings.IniFormat)
 
 
 class UserData:
     def __init__(self):
-        self.data = settings.value(USER_DATA, USER_DATA_DEFAULT, dict)
+        self.settings = QSettings('data/store.ini', QSettings.IniFormat)
+        self.data = self.settings.value(USER_DATA, USER_DATA_DEFAULT, dict)
         self.username = self.data.get('username', '')
-        self.cookie = self.data.get('cookie', None)
+        self.cookie = self.data.get('cookie', {})
         self.subscription_key = self.data.get('subscription_key', '')
 
+    def refresh_settings(self):
+        self.settings = QSettings('data/store.ini', QSettings.IniFormat)
+        self.data = self.settings.value(USER_DATA, USER_DATA_DEFAULT, dict)
+
+    def get_username(self, refresh_settings=True) -> str:
+        if refresh_settings:
+            self.refresh_settings()
+        return self.data.get('username', '')
+
+    def get_cookie(self, refresh_settings=True) -> dict:
+        if refresh_settings:
+            self.refresh_settings()
+
+        return self.data.get('cookie', None)
+
+    def get_subscription_key(self, refresh_settings=True) -> str:
+        if refresh_settings:
+            self.refresh_settings()
+        return self.data.get('subscription_key', '')
+
     def set_username(self, username: str):
+        self.username = username
         self.data['username'] = username
-        settings.setValue(USER_DATA, self.data)
-        settings.sync()
+        self.settings.setValue(USER_DATA, self.data)
+        self.settings.sync()
 
     def set_cookie(self, cookie: dict):
+        self.cookie = cookie
         self.data['cookie'] = cookie
-        settings.setValue(USER_DATA, self.data)
-        settings.sync()
+        self.settings.setValue(USER_DATA, self.data)
+        self.settings.sync()
 
     def set_subscription_key(self, key):
+        print(key + 'saved00000000000000')
+        self.subscription_key = key
         self.data['subscription_key'] = key
-        settings.setValue(USER_DATA, self.data)
-        settings.sync()
+        self.settings.setValue(USER_DATA, self.data)
+        self.settings.sync()
 
 
 class APIBackendData:
     def __init__(self):
-        self.API_URL = settings.value(API_BACKEND, BACKEND_DEFAULT_API_URL, str)
+        self.settings = QSettings('data/store.ini', QSettings.IniFormat)
+        self.api_url = self.settings.value(API_BACKEND, BACKEND_DEFAULT_API_URL, str)
 
-    @staticmethod
-    def set_api_url(url: str):
-        settings.setValue(API_BACKEND, url)
+    def set_api_url(self, url: str):
+        self.settings.setValue(API_BACKEND, url)

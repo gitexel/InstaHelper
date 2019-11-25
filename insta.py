@@ -23,7 +23,6 @@ from models import UserProfile
 from errors import ChallengeError
 from helpers import check_instagram_errors
 
-#
 logging.basicConfig(level=logging.INFO)
 
 
@@ -159,11 +158,8 @@ class MyClient(Client):
                 connection_error.__class__.__name__, str(connection_error)))
 
 
-class InstaService(BackendService):
+class InstaService:
     def __init__(self, username='', password='', settings=None):
-
-        super(BackendService, self).__init__()
-
         self.client = MyClient(
             auto_patch=True,
             authenticate=False,
@@ -171,6 +167,7 @@ class InstaService(BackendService):
             password=password,
             settings=settings
         )
+        self.backend_api = BackendService()
         self.excluded_ids = set()
 
     @check_instagram_errors
@@ -229,4 +226,4 @@ class InstaService(BackendService):
         self.client.cookie_jar._cookies = cookie
 
     def get_subscription_status(self) -> dict:
-        return self.subscription_status
+        return self.backend_api.subscription_status()

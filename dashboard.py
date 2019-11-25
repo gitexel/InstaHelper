@@ -1,5 +1,3 @@
-import time
-
 from PyQt5 import QtWidgets, uic, QtCore
 from PyQt5.QtCore import QThreadPool, pyqtSignal
 from PyQt5.QtGui import QCursor
@@ -153,6 +151,7 @@ class DashBoardUi(QtWidgets.QMainWindow, Engine):
         row: int = self.suggestedTableWidget.currentRow()
         user_id: str = self.suggestedTableWidget.item(row, 4).text()  # get user's id from hidden column
         # can't make it with self because it will override the button, so we will return it instead.
+        # noinspection PyTypeChecker
         button_table_inside: QPushButton = self.suggestedTableWidget.cellWidget(row, 3)
         progress_callback.emit(button_table_inside)  # run _update_button_followed_table_progress to disable button
 
@@ -221,13 +220,18 @@ class DashBoardUi(QtWidgets.QMainWindow, Engine):
     def _activate_subscription(self, progress_callback: pyqtSignal) -> dict:
         key = self.subscriptionKeyEdit.text()
         key = validate_input(value=key)
-        time.sleep(3)
+        print(key)
+
         if len(key) > 5:
-            pass
+            self.set_subscription_key(key=key)
+
         result: dict = self.service.get_subscription_status()
+        print(result, '---------------------------------------------')
 
         if isinstance(result, dict):
-            self.set_subscription_key(key=key)
+            if not result.get('valid', False):
+                ...
+                # self.set_subscription_key(key='')
             return result
 
         return {}
