@@ -2,20 +2,16 @@ from PyQt5 import QtWidgets, uic, QtCore
 from PyQt5.QtCore import QThreadPool, pyqtSignal
 from PyQt5.QtGui import QCursor
 from PyQt5.QtWidgets import QTableWidgetItem, QPushButton, QLabel, QTableWidget, QMainWindow, QFrame, QProgressBar, \
-    QLineEdit
+    QLineEdit, QGroupBox
 
 from insta import InstaService, UserProfile
-from helpers import Worker, CheckConnectivity, validate_input
-from settings import UserData
+from helpers import Worker, validate_input
 
 
 # todo wrapper to check if cookie is valid or not
 
-class Engine(UserData, CheckConnectivity):
-    pass
 
-
-class DashBoardUi(QtWidgets.QMainWindow, Engine):
+class DashBoardUi(QtWidgets.QMainWindow):
     def __init__(self):
         super(DashBoardUi, self).__init__()
         uic.loadUi('ui/dashboard.ui', self)
@@ -26,6 +22,7 @@ class DashBoardUi(QtWidgets.QMainWindow, Engine):
         self.threadpool = QThreadPool()
 
         self._init_service()
+
 
     # noinspection PyTypeChecker
     def _init_ui(self):
@@ -68,8 +65,8 @@ class DashBoardUi(QtWidgets.QMainWindow, Engine):
     # noinspection PyUnusedLocal
     def _load_service(self, progress_callback: pyqtSignal):
         self.service = InstaService()
-        self.service.set_cookie_dict(self.cookie)
         self.service.client_login()
+        self._init_subscription_worker()
 
     def _load_home(self):
 
@@ -87,7 +84,7 @@ class DashBoardUi(QtWidgets.QMainWindow, Engine):
 
     # noinspection PyUnusedLocal
     def _load_client_profile(self, progress_callback: pyqtSignal) -> UserProfile:
-        result = self.service.get_client_profile(self.username)
+        result = self.service.get_client_profile()
         if isinstance(result, dict):
             profile = UserProfile(result)
         else:
@@ -205,6 +202,7 @@ class DashBoardUi(QtWidgets.QMainWindow, Engine):
         self.subscriptionActivateButton.clicked.connect(self.activate_subscription_click_action)
 
         self.subscriptionStatusLabel: QLabel = self.findChild(QLabel, 'subscriptionStatusLabel')
+        self.subscriptionGroupBox: QGroupBox = self.findChild(QGroupBox, 'subscriptionGroupBox')
 
     def activate_subscription_click_action(self):
         activate_worker = Worker(self._activate_subscription)
@@ -223,15 +221,14 @@ class DashBoardUi(QtWidgets.QMainWindow, Engine):
         print(key)
 
         if len(key) > 5:
-            self.set_subscription_key(key=key)
+            self.service.user_data.set_subscription_key(key=key)
 
         result: dict = self.service.get_subscription_status()
-        print(result, '---------------------------------------------')
 
         if isinstance(result, dict):
             if not result.get('valid', False):
-                ...
-                # self.set_subscription_key(key='')
+                self.service.user_data.set_subscription_key(key='')
+
             return result
 
         return {}
@@ -240,9 +237,20 @@ class DashBoardUi(QtWidgets.QMainWindow, Engine):
         self.subscriptionActivateButton.setEnabled(True)
         self.subscriptionKeyEdit.setEnabled(True)
 
+    def _init_subscription_worker(self):
+        activate_worker = Worker(self._check_subscription)
+        activate_worker.signals.result.connect(self._subscription_status_result)
+        self.threadpool.start(activate_worker)
+
     def _subscription_status_result(self, result):
-        if result.get('valid', False):
+        if result.get('valid', False):  # todo fix date format
             self.subscriptionStatusLabel.setText('Valid until ' + result.get('end_date', ''))
+            self.subscriptionKeyEdit.setText(self.service.user_data.subscription_key)
+            self.subscriptionGroupBox.setEnabled(True)
+
+    def _check_subscription(self, progress_callback) -> dict:
+        result: dict = self.service.get_subscription_status()
+        return result
 
 ###################################################################################
 # End of subscription Tab                                                         #

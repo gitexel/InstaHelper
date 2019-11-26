@@ -69,7 +69,6 @@ class UserData:
         self.settings.sync()
 
     def set_subscription_key(self, key):
-        print(key + 'saved00000000000000')
         self.subscription_key = key
         self.data['subscription_key'] = key
         self.settings.setValue(USER_DATA, self.data)

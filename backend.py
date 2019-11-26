@@ -1,16 +1,14 @@
 from requests import Response
 
-from settings import APIBackendData, UserData
+from settings import APIBackendData
 import requests as req
 
 
-class BackendService:
-    def __init__(self):
-        self.user_data = UserData()
-        self.api_data = APIBackendData()
-
-    def get_headers(self, refreshed_settings=False):
-        return {'Authorization': 'Token %s' % self.user_data.get_subscription_key(refresh_settings=refreshed_settings)}
+class BackendService(APIBackendData):
+    def __init__(self, username: str, key=''):
+        super().__init__()
+        self.username: str = username
+        self.key: str = key
 
     def subscription_status(self):
         """
@@ -18,9 +16,8 @@ class BackendService:
         :return:
         {'valid': True, 'end_date': date}
         """
-        result: Response = req.get(url=self.api_data.api_url + 'service/%s/status' % self.user_data.username,
-                                   headers=self.get_headers(refreshed_settings=True)).json()
-        print(self.get_headers(refreshed_settings=True))
+        result: Response = req.get(url=self.api_url + 'service/%s/status' % self.username,
+                                   headers={'Authorization': 'Token %s' % self.key}).json()
         return result
         # raise Exception("backend error")  # todo handel error
 

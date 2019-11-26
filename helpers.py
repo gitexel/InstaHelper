@@ -8,6 +8,7 @@ from PyQt5.QtGui import QPixmap, QImage
 from errors import ChallengeError
 from instagram_web_api.errors import ClientError
 import webbrowser
+from functools import wraps
 
 REMOTE_SERVER = "www.google.com"
 
@@ -27,6 +28,16 @@ def check_instagram_errors(func):
         return result
 
     return decorator
+
+
+def subscription_required(fn):
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        if not args[0].subscription_key:
+            raise ClientError('Method requires authentication.', 403)
+        return fn(*args, **kwargs)
+
+    return wrapper
 
 
 def img_from_url(url: str) -> QPixmap:
